@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Учебники</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Manrope:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="index.html">English Platform</a>
+      <span class="spacer"></span>
+      <span class="muted small" id="who"></span>
+      <button type="button" class="btn small ghost" id="logout" hidden>Выйти</button>
+    </div>
+  </header>
+
+  <main class="wrap" id="app">
+    <p class="muted" style="padding:40px 0">Загружаю…</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="demo-data.js"></script>
+  <script src="data.js"></script>
+  <script>
+  (function () {
+    const app = document.getElementById('app');
+    const SOURCE = { personal: 'Свой', purchased: 'Купленный', other: 'Другое' };
+
+    function ring(done, total) {
+      if (!total) return '<span class="chip">без упражнений</span>';
+      const r = 11, c = 2 * Math.PI * r, part = Math.min(done / total, 1);
+      const label = `${done} из ${total}`;
+      return `<svg class="ring" viewBox="0 0 28 28" role="img" aria-label="Выполнено ${label}"><title>${label}</title>` +
+        `<circle cx="14" cy="14" r="${r}" fill="none" stroke="var(--line)" stroke-width="3"/>` +
+        `<circle cx="14" cy="14" r="${r}" fill="none" stroke="${part === 1 ? 'var(--ok)' : 'var(--accent)'}" stroke-width="3" stroke-linecap="round" ` +
+        `stroke-dasharray="${(c * part).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 14 14)"/></svg>`;
+    }
+
+    function renderLogin() {
+      app.innerHTML =
+        '<div class="login-card">' +
+        '<h1>Вход</h1>' +
+        '<p class="muted">Введите почту — пришлём ссылку для входа. Пароль не нужен.</p>' +
+        '<form id="loginForm"><input class="field" type="email" name="email" required autocomplete="email" placeholder="you@example.com" aria-label="Почта">' +
+        '<button class="btn" style="width:100%" type="submit">Получить ссылку</button></form>' +
+        '<p class="small muted" id="loginMsg" aria-live="polite"></p>' +
+        '</div>';
+      const form = document.getElementById('loginForm');
+      const msg = document.getElementById('loginMsg');
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        btn.disabled = true;
+        msg.textContent = 'Отправляю…';
+        try {
+          await Data.signIn(form.email.value.trim());
+          msg.textContent = 'Готово! Откройте письмо и нажмите на ссылку. Письмо может прийти в течение минуты.';
+        } catch (err) {
+          msg.textContent = 'Не получилось: ' + (err.message || err);
+          btn.disabled = false;
+        }
+      });
+    }
+
+    function renderLibrary(user, courses) {
+      const isTeacher = user.role === 'teacher';
+      let html = Data.isDemo
+        ? '<div class="banner">Демо-режим: база ещё не подключена, показан пример учебника. Подключение — в README, шаги 1–3.</div>'
+        : '';
+      html += '<div class="page-head">' +
+        `<h1>${isTeacher ? 'Учебники' : 'Мои уроки'}</h1>` +
+        `<p class="muted">${isTeacher ? 'Все материалы платформы.' : 'Уроки, которые назначил преподаватель.'}</p>` +
+        '</div>';
+
+      if (!courses.length) {
+        html += `<div class="course"><div class="empty">${isTeacher
+          ? 'Учебников пока нет. Они появятся после загрузки SQL-файла с перенесёнными уроками.'
+          : 'Преподаватель ещё не назначил вам уроки.'}</div></div>`;
+      }
+
+      courses.forEach(c => {
+        html += '<section class="course"><div class="course-head">' +
+          `<h2>${esc(c.title)}</h2><div class="meta">` +
+          (c.level ? `<span class="chip">${esc(c.level)}</span>` : '') +
+          (isTeacher && c.source ? `<span class="chip ${c.source === 'purchased' ? 'warn' : 'accent'}">${esc(SOURCE[c.source] || c.source)}</span>` : '') +
+          `<span class="chip">${c.lessons.length} ${plural(c.lessons.length, 'урок', 'урока', 'уроков')}</span>` +
+          '</div>' +
+          (c.description ? `<p>${esc(c.description)}</p>` : '') +
+          '</div>';
+        let lastSection = null;
+        c.lessons.forEach(l => {
+          if (l.section && l.section !== lastSection) {
+            html += `<div class="section-label">${esc(l.section)}</div>`;
+            lastSection = l.section;
+          }
+          html += `<a class="lesson-row" href="lesson.html?id=${encodeURIComponent(l.id)}">` +
+            `<span class="title">${esc(l.title)}</span>${ring(l.done_count || 0, l.exercise_count || 0)}</a>`;
+        });
+        html += '</section>';
+      });
+      app.innerHTML = html + '<div style="height:40px"></div>';
+    }
+
+    function plural(n, one, few, many) {
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return one;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+      return many;
+    }
+
+    async function main() {
+      const brand = document.querySelector('.brand');
+      if (window.APP_CONFIG && APP_CONFIG.SITE_NAME) { brand.textContent = APP_CONFIG.SITE_NAME; }
+      try {
+        const user = await Data.getUser();
+        if (!user) { renderLogin(); return; }
+        if (!Data.isDemo) {
+          document.getElementById('who').textContent = user.email || '';
+          const out = document.getElementById('logout');
+          out.hidden = false;
+          out.onclick = async () => { await Data.signOut(); location.reload(); };
+        }
+        renderLibrary(user, await Data.getLibrary());
+      } catch (e) {
+        console.error(e);
+        app.innerHTML = `<div class="empty"><p>Не удалось загрузить данные.</p><p class="small muted">${esc(e.message || e)}</p></div>`;
+      }
+    }
+    document.addEventListener('DOMContentLoaded', main);
+  })();
+  </script>
+</body>
+</html>
