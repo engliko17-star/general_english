@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-label="A café counter with a menu board">
+  <rect width="640" height="300" fill="#F6EFE6"/>
+  <rect x="0" y="210" width="640" height="90" fill="#C9A27E"/>
+  <rect x="0" y="200" width="640" height="14" fill="#8C6A4F"/>
+  <rect x="190" y="30" width="260" height="140" rx="10" fill="#2F3B35"/>
+  <text x="320" y="62" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#F6EFE6">MENU</text>
+  <g font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#E9E2D6">
+    <text x="214" y="92">Latte</text><text x="426" y="92" text-anchor="end">£3.20</text>
+    <text x="214" y="114">Cappuccino</text><text x="426" y="114" text-anchor="end">£3.00</text>
+    <text x="214" y="136">Tea with milk</text><text x="426" y="136" text-anchor="end">£2.10</text>
+    <text x="214" y="158">Muffin</text><text x="426" y="158" text-anchor="end">£2.50</text>
+  </g>
+  <g transform="translate(90 150)">
+    <rect x="0" y="10" width="40" height="44" rx="6" fill="#FFFFFF" stroke="#8C6A4F" stroke-width="3"/>
+    <path d="M40 22 q16 0 16 12 q0 12 -16 12" fill="none" stroke="#8C6A4F" stroke-width="3"/>
+    <path d="M12 0 q6 -8 0 -16 M26 0 q6 -8 0 -16" fill="none" stroke="#B9A79A" stroke-width="2"/>
+  </g>
+  <g transform="translate(510 152)">
+    <ellipse cx="25" cy="44" rx="30" ry="8" fill="#E9E2D6"/>
+    <path d="M5 40 q-4 -26 20 -30 q24 4 20 30 z" fill="#B5734A"/>
+    <circle cx="16" cy="24" r="2.5" fill="#5A3A26"/><circle cx="30" cy="20" r="2.5" fill="#5A3A26"/><circle cx="26" cy="32" r="2.5" fill="#5A3A26"/>
+  </g>
+</svg>
